@@ -1,5 +1,5 @@
-from mainlib.storage import Storage
-from mainlib.locations import LocationCrawler
+from crawler.storage import Storage
+from crawler.locations import LocationCrawler
 
 if __name__ == "__main__":
     storage = Storage("foobar.db")
