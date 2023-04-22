@@ -47,8 +47,8 @@ class RegionCrawler:
 
     def _extract_region_info(self, url: str, level: int):
         # Fetch content from url
-        resp = requests.get(url)
         try:
+            resp = requests.get(url)
             resp.raise_for_status()
         except Exception as err:
             logger.error(f"Failed to get data from {url} with error {err}")
