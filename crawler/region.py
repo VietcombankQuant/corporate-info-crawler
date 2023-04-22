@@ -28,6 +28,12 @@ class Region(SqlTableBase):
 class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
+        Region.create_table(self.storage_engine)
+
+    def crawl(self):
+        self._crawl_first_level()   # Provinces, Cities
+        self._crawl_other_level(2)  # Districts
+        self._crawl_other_level(3)  # Communes
 
     def _crawl_first_level(self):
         url = f"https://{BASE_URL}"
@@ -59,8 +65,8 @@ class RegionCrawler:
 
     def _crawl_other_level(self, level: int):
         with SqlSession(self.storage_engine) as session:
-            regions = [region for region in session.query(
-                Region).where(Region.level == level-1)]
+            regions_iter = session.query(Region).where(Region.level == level-1)
+            regions = list(regions_iter)
 
         for region in regions:
             url = f"https://{BASE_URL}{region.url}"
@@ -84,7 +90,7 @@ class RegionCrawler:
                     name=name,
                     level=level,
                     level_name={2: "Quận, huyện", 3: "Phường, xã"}[level],
-                    url=f"https://{BASE_URL}{url}",
+                    url=url,
                     parent_id=region.id,
                     parent_name=region.name
                 )
