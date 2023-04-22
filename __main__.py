@@ -3,7 +3,8 @@ import sqlalchemy
 
 from crawler.region import RegionCrawler
 
-if __name__ == "__main__":
+
+def main():
     output_path = pathlib.Path("output")
     if not output_path.exists():
         output_path.mkdir()
@@ -12,3 +13,7 @@ if __name__ == "__main__":
 
     crawler = RegionCrawler(storage_engine)
     crawler.crawl()
+
+
+if __name__ == "__main__":
+    main()
