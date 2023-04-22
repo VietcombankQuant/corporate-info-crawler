@@ -4,7 +4,7 @@ import pathlib
 import sys
 import json
 
-__all__ = ["BASE_URL", "SqlTableBase", "logger", "__config"]
+__all__ = ["BASE_URL", "SqlTableBase", "logger", "config"]
 
 BASE_URL = "wkajyoa4n5.execute-api.ap-southeast-1.amazonaws.com"
 SqlTableBase = declarative_base()
