@@ -9,6 +9,7 @@ from sqlalchemy.orm import declarative_base, Session as SqlSession
 from sqlalchemy import Column as SqlColumn, String as SqlString, Integer as SqlInteger
 
 from .common import *
+from .ratelimit import RateLimiter
 
 
 _region_levels = {1: "Tỉnh, thành phố", 2: "Quận, huyện", 3: "Phường, xã"}
@@ -40,12 +41,13 @@ class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
+        self.limiter = RateLimiter(2)
 
     async def crawl(self):
         async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
-            await self._crawl_first_level(client)           # Provinces, Cities
-            await self._crawl_other_level(client, level=2)  # Districts
-            await self._crawl_other_level(client, level=3)  # Communes
+            await self._crawl_first_level(client)
+            await self._crawl_other_level(client, level=2)
+            await self._crawl_other_level(client, level=3)
 
     async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int):
         # Fetch content from url
@@ -93,7 +95,8 @@ class RegionCrawler:
 
     async def _crawl_first_level(self, client: aiohttp.ClientSession):
         url = f"https://{BASE_URL}"
-        await self._extract_region_info(client, url, level=1)
+        async with self.limiter as _:
+            await self._extract_region_info(client, url,  level=1)
         logger.success(
             f"Got all regions at level 1 - {_region_levels[1]}"
         )
@@ -105,7 +108,8 @@ class RegionCrawler:
 
         async def create_task(region):
             url = f"https://{BASE_URL}{region.url}"
-            await self._extract_region_info(client, url, level=level)
+            async with self.limiter as _:
+                await self._extract_region_info(client, url, level=level)
             logger.success(f"Got all sub-regions of {region}")
 
         tasks = [create_task(region) for region in regions]
