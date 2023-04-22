@@ -7,7 +7,7 @@ from sqlalchemy import Engine as SqlEngine
 from sqlalchemy.orm import declarative_base, Session as SqlSession
 from sqlalchemy import Column as SqlColumn, String as SqlString, Integer as SqlInteger
 
-from .constants import *
+from .common import *
 
 
 class Region(SqlTableBase):
