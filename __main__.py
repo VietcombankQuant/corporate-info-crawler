@@ -5,9 +5,8 @@ from crawler.region import RegionCrawler
 
 
 def main():
-    output_path = pathlib.Path("output")
-    if not output_path.exists():
-        output_path.mkdir()
+    output_path = pathlib.Path.cwd() / "output"
+    output_path.mkdir(exist_ok=True)
     db_path = output_path / "corporate-info.sqlite3.db"
     storage_engine = sqlalchemy.create_engine(f"sqlite:///{db_path}")
 
