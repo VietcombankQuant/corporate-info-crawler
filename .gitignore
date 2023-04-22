@@ -290,3 +290,4 @@ $RECYCLE.BIN/
 
 # Output directory
 /output/*.sqlite3.db
+/output/logs/*
