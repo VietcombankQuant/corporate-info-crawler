@@ -2,8 +2,9 @@ from sqlalchemy.orm import declarative_base
 from loguru import logger
 import pathlib
 import sys
+import json
 
-__all__ = ["BASE_URL", "SqlTableBase", "logger"]
+__all__ = ["BASE_URL", "SqlTableBase", "logger", "__config"]
 
 BASE_URL = "wkajyoa4n5.execute-api.ap-southeast-1.amazonaws.com"
 SqlTableBase = declarative_base()
@@ -29,3 +30,17 @@ def configure_logger():
 
 
 logger = configure_logger()
+
+
+def __config():
+    CONFIG_FILE = pathlib.Path.cwd() / "config.json"
+    if not CONFIG_FILE.exists():
+        logger.critical(
+            'File config.json not exists. Run "python setup.py" and try again.'
+        )
+        sys.exit(1)
+    with open(CONFIG_FILE, "r") as f:
+        return json.load(f)
+
+
+config = __config()
