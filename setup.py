@@ -1,5 +1,5 @@
 from prompt_toolkit.validation import Validator, ValidationError
-from prompt_toolkit import prompt
+from prompt_toolkit import prompt, print_formatted_text, HTML
 import pathlib
 import json
 
@@ -17,24 +17,34 @@ class NumberValidator(Validator):
                 if not c.isdigit():
                     break
 
-            raise ValidationError(message='This input contains non-numeric characters', cursor_position=i)
+            raise ValidationError(
+                message='This input contains non-numeric characters', cursor_position=i)
 
 
 def main():
     config = {}
 
-    domain = prompt("Domain of the website or AWS API Gateway [default: masothue.com]: ")
+    domain = prompt(
+        "Domain of the website or AWS API Gateway [default: masothue.com]: "
+    )
     if domain == "":
         domain = "masothue.com"
     config["domain"] = domain
 
-    rate_limit = prompt("Maximum requests per second [default: 8]: ", validator=NumberValidator())
+    rate_limit = prompt(
+        "Maximum requests per second [default: 8]: ",
+        validator=NumberValidator()
+    )
     if rate_limit == "":
         rate_limit = 8
     config["rate_limit"] = int(rate_limit)
 
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
+
+    print_formatted_text(
+        HTML('<bold><ansigreen>Config is saved to file "config.json"</ansigreen></bold>')
+    )
 
 
 if __name__ == "__main__":
