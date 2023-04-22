@@ -3,7 +3,7 @@ from loguru import logger
 import pathlib
 import sys
 
-__all__ = ["BASE_URL", "SqlTableBase"]
+__all__ = ["BASE_URL", "SqlTableBase", "logger"]
 
 BASE_URL = "wkajyoa4n5.execute-api.ap-southeast-1.amazonaws.com"
 SqlTableBase = declarative_base()
@@ -25,5 +25,7 @@ def configure_logger():
     logger.add(sys.stdout, format=logger_format)
     logger.add(log_file, format=logger_format, rotation="64 MB", enqueue=True)
 
+    return logger
 
-configure_logger()
+
+logger = configure_logger()
