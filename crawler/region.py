@@ -35,13 +35,17 @@ class RegionCrawler:
         self._crawl_other_level(2)  # Districts
         self._crawl_other_level(3)  # Communes
 
-    def _crawl_first_level(self):
-        url = f"https://{BASE_URL}"
+    __region_levels = {1: "Tỉnh, thành phố", 2: "Quận, huyện", 3: "Phường, xã"}
+
+    def _extract_region_info(self, url: str, level: int):
+        # Fetch content from url
         resp = requests.get(url)
         resp.raise_for_status()
 
+        # Extract data from response
         document = etree.HTML(resp.text)
         query = '//div[@id = "sidebar"]//ul/li'
+        regions = []
         for elem in document.xpath(query):
             url = elem.xpath('.//a/@href')[0]
             name = elem.xpath('.//a//text()')[0]
@@ -49,18 +53,23 @@ class RegionCrawler:
             region = Region(
                 id=id,
                 name=name,
-                level=1,
-                level_name="Tỉnh, thành phố",
+                level=level,
+                level_name=self.__region_levels[level],
                 url=url,
                 parent_id=None,
                 parent_name=None
             )
+            regions.append(region)
 
-            with SqlSession(self.storage_engine) as session:
-                if session.get(Region, ident=region.id) == None:
-                    session.add(region)
-                    session.commit()
+        # Store data into storage
+        with SqlSession(self.storage_engine) as session:
+            if session.get(Region, ident=region.id) == None:
+                session.add_all(regions)
+                session.commit()
 
+    def _crawl_first_level(self):
+        url = f"https://{BASE_URL}"
+        self._extract_region_info(url, level=1)
         print("DONE: got all administrative level at level 1")
 
     def _crawl_other_level(self, level: int):
@@ -70,34 +79,5 @@ class RegionCrawler:
 
         for region in regions:
             url = f"https://{BASE_URL}{region.url}"
-            resp = requests.get(url)
-            resp.raise_for_status()
-
-            document = etree.HTML(resp.text)
-            query = '//div[@id = "sidebar"]//ul/li'
-
-            for elem in document.xpath(query):
-                try:
-                    url = elem.xpath('.//a/@href')[0]
-                    name = elem.xpath('.//a//text()')[0]
-                    id = url.split("-")[-1]
-                except Exception:
-                    print(f"ERROR: {region.__dict__}")
-                    continue
-
-                new_region = Region(
-                    id=id,
-                    name=name,
-                    level=level,
-                    level_name={2: "Quận, huyện", 3: "Phường, xã"}[level],
-                    url=url,
-                    parent_id=region.id,
-                    parent_name=region.name
-                )
-
-                with SqlSession(self.storage_engine) as session:
-                    if session.get(Region, ident=new_region.id) == None:
-                        session.add(new_region)
-                        session.commit()
-
+            self._extract_region_info(url, level=level)
             print(f"DONE: got all sub-units for {region.name}")
