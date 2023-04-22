@@ -287,3 +287,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,macos,python,vim,visualstudiocode
+
+# Output directory
+/output/*.sqlite3.db
