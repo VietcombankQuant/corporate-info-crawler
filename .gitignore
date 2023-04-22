@@ -291,3 +291,6 @@ $RECYCLE.BIN/
 # Output directory
 /output/*.sqlite3.db
 /output/logs/*
+
+# Config files
+/config.json
