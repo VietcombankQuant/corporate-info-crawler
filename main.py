@@ -1,9 +1,10 @@
-from crawler.storage import Storage
-from crawler.locations import LocationCrawler
+import pathlib
+import sqlalchemy
+
+from crawler.region import RegionCrawler
 
 if __name__ == "__main__":
-    storage = Storage("foobar.db")
-    crawler = LocationCrawler(storage)
-    crawler._crawl_first_level()
-    crawler._crawl_other_level(level=2)
-    crawler._crawl_other_level(level=3)
+    db_path = pathlib.Path(".") / "foobar.db"
+    storage_engine = sqlalchemy.create_engine(f"sqlite:///{db_path}")
+    crawler = RegionCrawler(storage_engine)
+    crawler.crawl()
