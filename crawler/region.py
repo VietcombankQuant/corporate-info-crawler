@@ -1,4 +1,5 @@
-import requests
+import asyncio
+import aiohttp
 from lxml import etree
 
 import sqlalchemy
@@ -40,22 +41,23 @@ class RegionCrawler:
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
 
-    def crawl(self):
-        self._crawl_first_level()   # Provinces, Cities
-        self._crawl_other_level(2)  # Districts
-        self._crawl_other_level(3)  # Communes
+    async def crawl(self):
+        async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
+            await self._crawl_first_level(client)           # Provinces, Cities
+            await self._crawl_other_level(client, level=2)  # Districts
+            await self._crawl_other_level(client, level=3)  # Communes
 
-    def _extract_region_info(self, url: str, level: int):
+    async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int):
         # Fetch content from url
-        resp = requests.get(url)
-        try:
-            resp.raise_for_status()
-        except Exception as err:
-            logger.error(f"Failed to get data from {url} with error {err}")
-            return
+        async with client.get(url) as resp:
+            if not resp.ok:
+                logger.error(
+                    f"Failed to get data from {url} with error {err}")
+                return
+            content = await resp.text()
 
         # Extract data from response
-        document = etree.HTML(resp.text)
+        document = etree.HTML(content)
         query = '//div[@id = "sidebar"]//ul/li'
         regions = []
         for elem in document.xpath(query):
@@ -89,18 +91,22 @@ class RegionCrawler:
             f"Extract and store {len(regions)} region records from {url}"
         )
 
-    def _crawl_first_level(self):
+    async def _crawl_first_level(self, client: aiohttp.ClientSession):
         url = f"https://{BASE_URL}"
-        self._extract_region_info(url, level=1)
+        await self._extract_region_info(client, url, level=1)
         logger.success(
-            f"Got all regions at level 1 - {_region_levels[1]}")
+            f"Got all regions at level 1 - {_region_levels[1]}"
+        )
 
-    def _crawl_other_level(self, level: int):
+    async def _crawl_other_level(self, client: aiohttp.ClientSession, level: int):
         with SqlSession(self.storage_engine) as session:
             regions_iter = session.query(Region).where(Region.level == level-1)
             regions = list(regions_iter)
 
-        for region in regions:
+        async def create_task(region):
             url = f"https://{BASE_URL}{region.url}"
-            self._extract_region_info(url, level=level)
+            await self._extract_region_info(client, url, level=level)
             logger.success(f"Got all sub-regions of {region}")
+
+        tasks = [create_task(region) for region in regions]
+        await asyncio.gather(*tasks)
