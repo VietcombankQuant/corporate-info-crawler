@@ -41,7 +41,7 @@ class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
-        self.limiter = RateLimiter(2)
+        self.limiter = RateLimiter(config["rate_limit"])
 
     async def crawl(self):
         async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
