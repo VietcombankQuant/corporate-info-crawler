@@ -3,3 +3,4 @@ requests
 lxml
 loguru
 sqlalchemy
+prompt-toolkit
