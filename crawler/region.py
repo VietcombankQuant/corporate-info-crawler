@@ -54,7 +54,7 @@ class RegionCrawler:
         async with client.get(url) as resp:
             if not resp.ok:
                 logger.error(
-                    f"Failed to get data from {url} with error {err}")
+                    f"Failed to get data from {url} with status {resp.status}")
                 return
             content = await resp.text()
 
