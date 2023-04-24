@@ -2,9 +2,9 @@ import asyncio
 import aiohttp
 from lxml import etree
 from dataclasses import dataclass
+from typing import Union
 
 import sqlalchemy
-from sqlalchemy.exc import IntegrityError as SqlIntegrityError
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column
 from sqlalchemy import Engine as SqlEngine
@@ -22,10 +22,14 @@ class Corporate(SqlTableBase):
     name = SqlColumn(SqlString)
     international_name = SqlColumn(SqlString)
     short_name = SqlColumn(SqlString)
+    rep_person = SqlColumn(SqlString)
+    company_type = SqlColumn(SqlString)
+    industry = SqlColumn(SqlString)
     address = SqlColumn(SqlString)
     phone = SqlColumn(SqlString)
     active_date = SqlColumn(SqlString)
     region_id = mapped_column(ForeignKey(Region.id))
+    status = SqlColumn(SqlString)
     last_update = SqlColumn(SqlString)
 
     @classmethod
@@ -46,24 +50,75 @@ class CorporateCrawler:
         self.limiter = RateLimiter(config["rate_limit"])
 
     async def crawl(self):
-        pass
+        with SqlSession(self.storage_engine) as session:
+            query = session.query(Region).where(Region.level == 3)
+            regions = [region for region in query]
 
-    async def _search_by_region(self, client: aiohttp.ClientSession, region: Region) -> list[str]:
+        cookie_jar = aiohttp.DummyCookieJar()
+        async with aiohttp.ClientSession(cookie_jar=cookie_jar) as client:
+            for region in regions:
+                urls = await self._search_by_region(client, region)
+                tasks = [
+                    self._extract_corporate_info(client, url) for url in urls
+                ]
+                corporates = await asyncio.gather(*tasks)
+
+                with SqlSession(self.storage_engine) as sql_session:
+                    for corporate in corporates:
+                        if corporate != None and sql_session.get(Corporate, ident=corporate.tax_code) != None:
+                            sql_session.add(corporate)
+
+    async def _extract_corporate_info(self, client: aiohttp.ClientSession, url: str, region: Region) -> Union[Corporate, None]:
+        international_name = SqlColumn(SqlString)
+        short_name = SqlColumn(SqlString)
+
+        queries = {
+            "tax_id": '//table[@class = "table-taxinfo"]//td[@itemprop="taxID"]/span/text()',
+            "name": '//table[@class = "table-taxinfo"]//th[@itemprop="name"]/span/text()',
+            "rep_person": '//table[@class = "table-taxinfo"]//td/span[@itemprop="name"]/a/text()',
+            "company_type": '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-building")]/parent::td/following-sibling::td/a/text()',
+            "industry": '//h3[contains(text(), "Ngành nghề kinh doanh")]//following-sibling::table//td/strong/a/text()',
+            "address": '//table[@class = "table-taxinfo"]//td[@itemprop="address"]/span/text()',
+            "phone": '//table[@class = "table-taxinfo"]//td[@itemprop="telephone"]/span/text()',
+            "active_date": '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-calendar")]/parent::td/following-sibling::td/span/text()',
+            "status": '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-info")]/parent::td/following-sibling::td/a/text()',
+            "last_update": '//table[@class = "table-taxinfo"]//button[@data-target = "#modal-update"]/preceding-sibling::em/text()',
+        }
+
+        tax_id = '//table[@class = "table-taxinfo"]//td[@itemprop="taxID"]/span/text()'
+        name = '//table[@class = "table-taxinfo"]//th[@itemprop="name"]/span/text()'
+        rep_person = '//table[@class = "table-taxinfo"]//td/span[@itemprop="name"]/a/text()'
+        company_type = '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-building")]/parent::td/following-sibling::td/a/text()'
+        industry = '//h3[contains(text(), "Ngành nghề kinh doanh")]//following-sibling::table//td/strong/a/text()'
+        address = '//table[@class = "table-taxinfo"]//td[@itemprop="address"]/span/text()'
+        phone = '//table[@class = "table-taxinfo"]//td[@itemprop="telephone"]/span/text()'
+        active_date = '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-calendar")]/parent::td/following-sibling::td/span/text()'
+        region_id = region.id
+        status = '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-info")]/parent::td/following-sibling::td/a/text()'
+        last_update = '//table[@class = "table-taxinfo"]//button[@data-target = "#modal-update"]/preceding-sibling::em/text()'
+
+    async def _search_by_region(self, client: aiohttp.ClientSession, region: Region) -> set[str]:
         search_url = f"https://{BASE_URL}{region.url}"
-        corporate_urls = []
+        corporate_urls = set()
         current_page = 1
         max_page = 1
-        while current_page <= max_page:
-            pass
 
-    async def _extract_urls_from_search(self, client: aiohttp.ClientSession, search_url: str) -> SearchResult:
+        while current_page <= max_page:
+            search_result = await self._extract_search_result(client, search_url, params={"page": current_page})
+            max_page = max(search_result.max_page, max_page)
+            current_page += 1
+            corporate_urls.update(search_result.urls)
+
+        return corporate_urls
+
+    async def _extract_search_result(self, client: aiohttp.ClientSession, search_url: str, params: dict = None) -> SearchResult:
         # Fetch content from url
-        async with client.get(search_url) as resp:
+        async with client.get(search_url, params=params) as resp:
             if not resp.ok:
                 logger.error(
                     f"Failed to get data from {search_url} with status {resp.status}"
                 )
-                return
+                return SearchResult(max_page=0, urls=set())
             content = await resp.text()
 
         # Extract page count
