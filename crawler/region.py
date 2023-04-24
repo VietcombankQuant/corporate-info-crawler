@@ -48,7 +48,7 @@ class RegionCrawler:
             await self._crawl_other_level(client, level=2)
             await self._crawl_other_level(client, level=3)
 
-    async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int):
+    async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int, parent_region: Region = None):
         # Fetch content from url
         async with client.get(url) as resp:
             if not resp.ok:
@@ -62,6 +62,14 @@ class RegionCrawler:
         document = etree.HTML(content)
         query = '//div[@id = "sidebar"]//ul/li'
         regions = []
+
+        if parent_region != None:
+            parent_id = parent_region.id
+            parent_name = parent_region.name
+        else:
+            parent_id = None
+            parent_name = None
+
         for elem in document.xpath(query):
             try:
                 url = elem.xpath('.//a/@href')[0]
@@ -77,8 +85,8 @@ class RegionCrawler:
                 level=level,
                 level_name=_region_levels[level],
                 url=url,
-                parent_id=None,
-                parent_name=None
+                parent_id=parent_id,
+                parent_name=parent_name,
             )
             regions.append(region)
 
