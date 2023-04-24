@@ -3,6 +3,7 @@ import pathlib
 import sqlalchemy
 
 from crawler.region import RegionCrawler
+from crawler.corporate import CorporateCrawler
 
 
 async def main():
@@ -12,6 +13,9 @@ async def main():
     storage_engine = sqlalchemy.create_engine(f"sqlite:///{db_path}")
 
     crawler = RegionCrawler(storage_engine)
+    await crawler.crawl()
+
+    crawler = CorporateCrawler(storage_engine)
     await crawler.crawl()
 
 
