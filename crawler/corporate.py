@@ -22,7 +22,7 @@ class Corporate(SqlTableBase):
     name = SqlColumn(SqlString)
     international_name = SqlColumn(SqlString)
     short_name = SqlColumn(SqlString)
-    rep_person = SqlColumn(SqlString)
+    representative = SqlColumn(SqlString)
     company_type = SqlColumn(SqlString)
     industry = SqlColumn(SqlString)
     address = SqlColumn(SqlString)
@@ -85,7 +85,9 @@ class CorporateCrawler:
     _corporate_xpath_queries = {
         "tax_id": '//table[@class = "table-taxinfo"]//td[@itemprop="taxID"]/span/text()',
         "name": '//table[@class = "table-taxinfo"]//th[@itemprop="name"]/span/text()',
-        "rep_person": '//table[@class = "table-taxinfo"]//td/span[@itemprop="name"]/a/text()',
+        "international_name": '//table[@class = "table-taxinfo"]//i[contains(@class, "fa-globe")]/parent::td/following-sibling::td[@itemprop="alternateName"]/span/text()',
+        "short_name": '//table[@class = "table-taxinfo"]//i[contains(@class, "fa-reorder")]/parent::td/following-sibling::td[@itemprop="alternateName"]/span/text()',
+        "representative": '//table[@class = "table-taxinfo"]//td/span[@itemprop="name"]/a/text()',
         "company_type": '//table[@class = "table-taxinfo"]//td/i[contains(@class, "fa-building")]/parent::td/following-sibling::td/a/text()',
         "industry": '//h3[contains(text(), "Ngành nghề kinh doanh")]//following-sibling::table//td/strong/a/text()',
         "address": '//table[@class = "table-taxinfo"]//td[@itemprop="address"]/span/text()',
