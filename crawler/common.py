@@ -4,9 +4,8 @@ import pathlib
 import sys
 import json
 
-__all__ = ["BASE_URL", "SqlTableBase", "logger", "config"]
+__all__ = ["SqlTableBase", "logger", "config"]
 
-BASE_URL = "wkajyoa4n5.execute-api.ap-southeast-1.amazonaws.com"
 SqlTableBase = declarative_base()
 
 
@@ -32,6 +31,10 @@ def configure_logger():
 logger = configure_logger()
 
 
+class Config:
+    pass
+
+
 def __config():
     CONFIG_FILE = pathlib.Path.cwd() / "config.json"
     if not CONFIG_FILE.exists():
@@ -40,7 +43,9 @@ def __config():
         )
         sys.exit(1)
     with open(CONFIG_FILE, "r") as f:
-        return json.load(f)
+        config = Config()
+        config.__dict__ = json.load(f)
+    return config
 
 
 config = __config()

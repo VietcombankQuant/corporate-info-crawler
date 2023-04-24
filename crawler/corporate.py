@@ -50,7 +50,7 @@ class CorporateCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Corporate.create_table(self.storage_engine)
-        self.limiter = RateLimiter(config["rate_limit"])
+        self.limiter = RateLimiter(config.rate_limit)
 
     async def crawl(self):
         with SqlSession(self.storage_engine) as session:
@@ -97,7 +97,7 @@ class CorporateCrawler:
 
     async def _extract_corporate_info(self, client: aiohttp.ClientSession, url: str, region: Region) -> Union[Corporate, None]:
         # Fetch corporate data from url
-        full_url = f"https://{BASE_URL}{url}"
+        full_url = f"https://{config.domain}{url}"
         async with client.get(full_url) as resp:
             if not resp.ok:
                 logger.error(
@@ -124,7 +124,7 @@ class CorporateCrawler:
         return corporate
 
     async def _search_by_region(self, client: aiohttp.ClientSession, region: Region) -> set[str]:
-        search_url = f"https://{BASE_URL}{region.url}"
+        search_url = f"https://{config.domain}{region.url}"
         corporate_urls = set()
         current_page = 1
         max_page = 1

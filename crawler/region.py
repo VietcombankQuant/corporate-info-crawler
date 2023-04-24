@@ -40,7 +40,7 @@ class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
-        self.limiter = RateLimiter(config["rate_limit"])
+        self.limiter = RateLimiter(config.rate_limit)
 
     async def crawl(self):
         async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
@@ -94,7 +94,7 @@ class RegionCrawler:
         )
 
     async def _crawl_first_level(self, client: aiohttp.ClientSession):
-        url = f"https://{BASE_URL}"
+        url = f"https://{config.domain}"
         async with self.limiter as _:
             await self._extract_region_info(client, url,  level=1)
         logger.success(
@@ -107,7 +107,7 @@ class RegionCrawler:
             regions = list(regions_iter)
 
         async def create_task(region):
-            url = f"https://{BASE_URL}{region.url}"
+            url = f"https://{config.domain}{region.url}"
             async with self.limiter as _:
                 await self._extract_region_info(client, url, level=level)
             logger.success(f"Got all sub-regions of {region}")
