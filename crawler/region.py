@@ -3,9 +3,8 @@ import aiohttp
 from lxml import etree
 
 import sqlalchemy
-from sqlalchemy.exc import IntegrityError as SqlIntegrityError
 from sqlalchemy import Engine as SqlEngine
-from sqlalchemy.orm import declarative_base, Session as SqlSession
+from sqlalchemy.orm import Session as SqlSession
 from sqlalchemy import Column as SqlColumn, String as SqlString, Integer as SqlInteger
 
 from .common import *
@@ -54,7 +53,8 @@ class RegionCrawler:
         async with client.get(url) as resp:
             if not resp.ok:
                 logger.error(
-                    f"Failed to get data from {url} with status {resp.status}")
+                    f"Failed to get data from {url} with status {resp.status}"
+                )
                 return
             content = await resp.text()
 
