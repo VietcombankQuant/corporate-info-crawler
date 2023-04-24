@@ -79,7 +79,7 @@ class CorporateCrawler:
 
                 logger.success(
                     f'Added {record_counter} corporate infor records '
-                    f'in region {region.id} - {region} into "corporates table"'
+                    f'in region {region} into "corporates table"'
                 )
 
     _corporate_xpath_queries = {

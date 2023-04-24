@@ -29,8 +29,8 @@ class Region(SqlTableBase):
         Self.metadata.create_all(engine)
 
     def __str__(self) -> str:
-        self_repr = f"{self.level_name} {self.name}"
-        parent_repr = f"{_region_levels[self.level]} {self.parent_name}"
+        self_repr = f"{self.id} {self.level_name} {self.name}"
+        parent_repr = f"{self.parent_id} {_region_levels[self.level]} {self.parent_name}"
         if self.parent_id in ["", None]:
             return self_repr
         return f"{parent_repr} - {self_repr}"
