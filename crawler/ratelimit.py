@@ -43,7 +43,7 @@ class RateLimiter:
 
     async def release(self):
         self.current_count -= 1
-        asyncio.sleep(0.0)
+        await asyncio.sleep(0.0)
 
     async def __aenter__(self):
         await self.acquire()
