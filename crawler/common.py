@@ -3,6 +3,7 @@ from loguru import logger
 import pathlib
 import sys
 import json
+import os
 
 __all__ = ["SqlTableBase", "logger", "config"]
 
@@ -32,20 +33,23 @@ logger = configure_logger()
 
 
 class Config:
-    pass
-
-
-def __config():
-    CONFIG_FILE = pathlib.Path.cwd() / "config.json"
-    if not CONFIG_FILE.exists():
-        logger.critical(
-            'File config.json not exists. Run "python setup.py" and try again.'
+    def __init__(self):
+        self.domain = os.environ.get("CRAWLER_API_DOMAIN", "masothue.com")
+        self.rate_limit = int(os.environ.get(
+            "CRAWLER_MAX_REQUESTS_PER_SEC", "8")
         )
-        sys.exit(1)
-    with open(CONFIG_FILE, "r") as f:
-        config = Config()
-        config.__dict__ = json.load(f)
-    return config
+
+        __output_path = pathlib.Path.cwd() / "output"
+        self.__output_path = os.environ.get(
+            "CRAWLER_OUTPUT_PATH", f"{__output_path}"
+        )
+
+        db_url = __output_path / "corporate-info.sqlite3.db"
+        self.db_url = os.environ.get("CRAWLER_SQL_ENGINE_URL", f"sqlite:///{db_url}")
+
+    @property
+    def output_path(self) -> pathlib.Path:
+        return pathlib.Path(self.__output_path)
 
 
-config = __config()
+config = Config()

@@ -4,13 +4,12 @@ import sqlalchemy
 
 from crawler.region import RegionCrawler
 from crawler.corporate import CorporateCrawler
+from crawler.common import config
 
 
 async def main():
-    output_path = pathlib.Path.cwd() / "output"
-    output_path.mkdir(exist_ok=True)
-    db_path = output_path / "corporate-info.sqlite3.db"
-    storage_engine = sqlalchemy.create_engine(f"sqlite:///{db_path}")
+    config.output_path.mkdir(exist_ok=True)
+    storage_engine = sqlalchemy.create_engine(config.db_url)
 
     crawler = RegionCrawler(storage_engine)
     await crawler.crawl()
