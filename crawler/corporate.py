@@ -14,6 +14,7 @@ from sqlalchemy import Column as SqlColumn, String as SqlString
 from .common import *
 from .ratelimit import RateLimiter
 from .region import Region
+from .retry_client import RetryClient
 
 
 class Corporate(SqlTableBase):
@@ -61,7 +62,9 @@ class CorporateCrawler:
             )
 
         cookie_jar = aiohttp.DummyCookieJar()
-        async with aiohttp.ClientSession(cookie_jar=cookie_jar) as client:
+        async with RetryClient(max_retries=config.max_retries,
+                               limiter=config.rate_limit,
+                               cookie_jar=cookie_jar) as client:
             for region in regions:
                 urls = await self._search_by_region(client, region)
                 tasks = [
@@ -97,7 +100,7 @@ class CorporateCrawler:
         "last_update": '//table[@class = "table-taxinfo"]//button[@data-target = "#modal-update"]/preceding-sibling::em/text()',
     }
 
-    async def _extract_corporate_info(self, client: aiohttp.ClientSession, url: str, region: Region) -> Union[Corporate, None]:
+    async def _extract_corporate_info(self, client: RetryClient, url: str, region: Region) -> Union[Corporate, None]:
         # Fetch corporate data from url
         full_url = f"https://{config.domain}{url}"
         async with client.get(full_url) as resp:

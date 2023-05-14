@@ -9,6 +9,7 @@ from sqlalchemy import Column as SqlColumn, String as SqlString, Integer as SqlI
 
 from .common import *
 from .ratelimit import RateLimiter
+from .retry_client import RetryClient
 
 
 _region_levels = {1: "Tỉnh, thành phố", 2: "Quận, huyện", 3: "Phường, xã"}
@@ -43,12 +44,14 @@ class RegionCrawler:
         self.limiter = RateLimiter(config.rate_limit)
 
     async def crawl(self):
-        async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
+        async with RetryClient(max_retries=config.max_retries,
+                               limiter=config.rate_limit,
+                               cookie_jar=aiohttp.DummyCookieJar()) as client:
             await self._crawl_first_level(client)
             await self._crawl_other_level(client, level=2)
             await self._crawl_other_level(client, level=3)
 
-    async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int, parent_region: Region = None):
+    async def _extract_region_info(self, client: RetryClient, url: str, level: int, parent_region: Region = None):
         # Fetch content from url
         async with client.get(url) as resp:
             if not resp.ok:
@@ -101,23 +104,21 @@ class RegionCrawler:
             f"Extract and store {len(regions)} region records from {url}"
         )
 
-    async def _crawl_first_level(self, client: aiohttp.ClientSession):
+    async def _crawl_first_level(self, client: RetryClient):
         url = f"https://{config.domain}"
-        async with self.limiter as _:
-            await self._extract_region_info(client, url,  level=1)
+        await self._extract_region_info(client, url,  level=1)
         logger.success(
             f"Got all regions at level 1 - {_region_levels[1]}"
         )
 
-    async def _crawl_other_level(self, client: aiohttp.ClientSession, level: int):
+    async def _crawl_other_level(self, client: RetryClient, level: int):
         with SqlSession(self.storage_engine) as session:
             regions_iter = session.query(Region).where(Region.level == level-1)
             regions = list(regions_iter)
 
         async def create_task(region):
             url = f"https://{config.domain}{region.url}"
-            async with self.limiter as _:
-                await self._extract_region_info(client, url, level=level)
+            await self._extract_region_info(client, url, level=level)
             logger.success(f"Got all sub-regions of {region}")
 
         tasks = [create_task(region) for region in regions]
