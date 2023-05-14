@@ -6,6 +6,7 @@ import random
 import os
 
 from .ratelimit import RateLimiter
+from .api_gateway import ApiGateway
 
 __all__ = ["SqlTableBase", "logger", "config"]
 
@@ -36,14 +37,14 @@ logger = configure_logger()
 
 class Config:
     def __init__(self):
-        domains = os.environ.get("CRAWLER_API_DOMAINS", "masothue.com")
-        self.domains = domains.split(";")
+        self.source_uri = "https://masothue.com"
+        self.api_gateways = {}
 
         rate_limit = os.environ.get("CRAWLER_MAX_REQUESTS_PER_SEC", "8")
         rate_limit = int(rate_limit)
         self.rate_limiter = RateLimiter(rate_limit)
 
-        max_retries = os.environ.get("CRAWLER_MAX_RETRIES", "8")
+        max_retries = os.environ.get("CRAWLER_MAX_RETRIES", "3")
         self.max_retries = int(max_retries)
 
         __output_path = pathlib.Path.cwd() / "output"
@@ -61,8 +62,12 @@ class Config:
         return pathlib.Path(self.__output_path)
 
     @property
-    def domain(self):
-        return random.choice(self.domains)
+    def domain(self) -> str:
+        if len(self.api_gateways) == 0:
+            gateway = ApiGateway(self.source_uri, region="ap-southeast-1")
+            self.api_gateways[gateway.endpoint] = gateway
+        gateway = random.choice(list(self.api_gateways.values()))
+        return gateway.endpoint
 
 
 config = Config()
