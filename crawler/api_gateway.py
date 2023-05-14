@@ -1,6 +1,5 @@
 import boto3
 import random
-import json
 
 from .common import logger
 
@@ -56,8 +55,7 @@ class ApiGateway:
             endpointConfiguration={"types": ["REGIONAL"]}
         )
 
-        logger.info(
-            f"Created new API Gateway {json.dumps(create_api_response)}")
+        logger.info(f"Created new API Gateway {create_api_response}")
 
         # Get ID for new resource
         get_resource_response = awsclient.get_resources(
@@ -137,4 +135,4 @@ class ApiGateway:
         session = boto3.session.Session()
         awsclient = session.client('apigateway', region_name=self.region)
         status = awsclient.delete_rest_api(restApiId=self.rest_api_id)
-        logger.info(f"Deleted API Gateway {json.dumps(status)}")
+        logger.info(f"Deleted API Gateway {status}")
