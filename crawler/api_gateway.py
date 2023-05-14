@@ -1,3 +1,4 @@
+import asyncio
 import boto3
 import random
 
@@ -24,20 +25,14 @@ class ApiGateway:
         self.stage_name = stage_name
         self.rest_api_id = self.__new_api_gateway()
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.delete_api_gateway()
-
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *args):
-        self.delete_api_gateway()
+        await self.delete_api_gateway()
 
     def __del__(self):
-        self.delete_api_gateway()
+        asyncio.run(self.delete_api_gateway())
 
     @property
     def endpoint(self) -> str:
@@ -131,7 +126,14 @@ class ApiGateway:
         # Return endpoint name and whether it show it is newly created
         return rest_api_id
 
-    def delete_api_gateway(self):
+    async def delete_api_gateway(self):
+        for i in range(5):
+            try:
+                self.__delete_api_gateway()
+            except Exception:
+                await asyncio.sleep(2**i)
+
+    def __delete_api_gateway(self):
         session = boto3.session.Session()
         awsclient = session.client('apigateway', region_name=self.region)
         status = awsclient.delete_rest_api(restApiId=self.rest_api_id)

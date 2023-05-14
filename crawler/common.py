@@ -1,3 +1,4 @@
+import asyncio
 from sqlalchemy.orm import declarative_base
 from loguru import logger
 import pathlib
@@ -60,11 +61,11 @@ class Config:
     def remove_gateway(self, endpoint):
         gateway = self.__api_gateways.get(endpoint)
         if gateway != None:
-            gateway.delete_api_gateway()
+            asyncio.run(gateway.delete_api_gateway())
 
     def remove_all_gateways(self):
         for gateway in self.__api_gateways.values():
-            gateway.delete_api_gateway()
+            asyncio.run(gateway.delete_api_gateway())
 
     def new_gateway(self) -> ApiGateway:
         gateway = ApiGateway(self.source_uri)
