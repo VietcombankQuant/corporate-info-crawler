@@ -16,7 +16,8 @@ class RetryClient:
     @asynccontextmanager
     async def get(self, url, *args, **kwargs) -> aiohttp.ClientResponse:
         for i in range(self.max_retries):
-            full_url = f"https://{config.domain}{url}"
+            domain = config.domain
+            full_url = f"https://{domain}{url}"
             async with self.limiter as _:
                 async with self.session.get(full_url, *args, **kwargs) as resp:
                     if resp.ok or (i == self.max_retries - 1):
@@ -25,12 +26,18 @@ class RetryClient:
             logger.warning(
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
+            config.remove_gateway(domain)
             timeout = 2**i
             await asyncio.sleep(timeout)
+
+        # Max retries reached => return errors
+        yield resp
+        return
 
     @asynccontextmanager
     async def post(self, url, *args, **kwargs) -> aiohttp.ClientResponse:
         for i in range(self.max_retries):
+            domain = config.domain
             full_url = f"https://{config.domain}{url}"
             async with self.limiter as _:
                 async with self.session.post(full_url, *args, **kwargs) as resp:
@@ -40,8 +47,13 @@ class RetryClient:
             logger.warning(
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
+            config.remove_gateway(domain)
             timeout = 2**i
             await asyncio.sleep(timeout)
+
+        # Max retries reached => return errors
+        yield resp
+        return
 
     async def __aenter__(self):
         session = aiohttp.ClientSession(*self.args, **self.kwargs)
