@@ -2,7 +2,7 @@ from sqlalchemy.orm import declarative_base
 from loguru import logger
 import pathlib
 import sys
-import json
+import random
 import os
 
 from .ratelimit import RateLimiter
@@ -36,7 +36,8 @@ logger = configure_logger()
 
 class Config:
     def __init__(self):
-        self.domain = os.environ.get("CRAWLER_API_DOMAIN", "masothue.com")
+        domains = os.environ.get("CRAWLER_API_DOMAINS", "masothue.com")
+        self.domains = domains.split(";")
 
         rate_limit = os.environ.get("CRAWLER_MAX_REQUESTS_PER_SEC", "8")
         rate_limit = int(rate_limit)
@@ -58,6 +59,10 @@ class Config:
     @property
     def output_path(self) -> pathlib.Path:
         return pathlib.Path(self.__output_path)
+
+    @property
+    def domain(self):
+        return random.choice(self.domains)
 
 
 config = Config()
