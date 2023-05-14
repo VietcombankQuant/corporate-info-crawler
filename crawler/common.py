@@ -61,6 +61,11 @@ class Config:
         if endpoint in self.__api_gateways:
             del self.__api_gateways[endpoint]
 
+    def new_gateway(self) -> ApiGateway:
+        gateway = ApiGateway(self.source_uri)
+        self.__api_gateways[gateway.endpoint] = gateway
+        return gateway
+
     @property
     def output_path(self) -> pathlib.Path:
         return pathlib.Path(self.__output_path)
@@ -68,8 +73,7 @@ class Config:
     @property
     def domain(self) -> str:
         if len(self.__api_gateways) == 0:
-            gateway = ApiGateway(self.source_uri, region="ap-southeast-1")
-            self.__api_gateways[gateway.endpoint] = gateway
+            gateway = self.new_gateway()
             return gateway.endpoint
 
         gateway = random.choice(list(self.__api_gateways.values()))
