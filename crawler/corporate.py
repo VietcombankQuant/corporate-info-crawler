@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session as SqlSession
 from sqlalchemy import Column as SqlColumn, String as SqlString
 
 from .common import *
-from .ratelimit import RateLimiter
 from .region import Region
 from .retry_client import RetryClient
 
@@ -51,7 +50,6 @@ class CorporateCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Corporate.create_table(self.storage_engine)
-        self.limiter = RateLimiter(config.rate_limit)
 
     async def crawl(self):
         with SqlSession(self.storage_engine) as session:
@@ -103,13 +101,14 @@ class CorporateCrawler:
     async def _extract_corporate_info(self, client: RetryClient, url: str, region: Region) -> Union[Corporate, None]:
         # Fetch corporate data from url
         full_url = f"https://{config.domain}{url}"
-        async with client.get(full_url) as resp:
-            if not resp.ok:
-                logger.error(
-                    f"Failed to get corporate data from {url} with status {resp.status}"
-                )
-                return None
-            content = await resp.text()
+        async with config.limiter as _:
+            async with client.get(full_url) as resp:
+                if not resp.ok:
+                    logger.error(
+                        f"Failed to get corporate data from {url} with status {resp.status}"
+                    )
+                    return None
+                content = await resp.text()
 
         # Extract data from response
         document = etree.HTML(content)
@@ -144,13 +143,14 @@ class CorporateCrawler:
 
     async def _extract_search_result(self, client: aiohttp.ClientSession, search_url: str, params: dict = None) -> SearchResult:
         # Fetch content from url
-        async with client.get(search_url, params=params) as resp:
-            if not resp.ok:
-                logger.error(
-                    f"Failed to get data from {search_url} with status {resp.status}"
-                )
-                return SearchResult(max_page=0, urls=set())
-            content = await resp.text()
+        async with config.limiter as _:
+            async with client.get(search_url, params=params) as resp:
+                if not resp.ok:
+                    logger.error(
+                        f"Failed to get data from {search_url} with status {resp.status}"
+                    )
+                    return SearchResult(max_page=0, urls=set())
+                content = await resp.text()
 
         # Extract page count
         document = etree.HTML(content)
