@@ -19,13 +19,20 @@ class RetryClient:
             domain = config.domain
             full_url = f"https://{domain}{url}"
             async with self.limiter as _:
-                async with self.session.get(full_url, *args, **kwargs) as resp:
-                    if resp.ok or (i == self.max_retries - 1):
-                        yield resp
-                        return
-            logger.warning(
-                f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
-            )
+                try:
+                    async with self.session.get(full_url, *args, **kwargs) as resp:
+                        if resp.ok or (i == self.max_retries - 1):
+                            yield resp
+                            return
+
+                    logger.warning(
+                        f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
+                    )
+                except Exception as err:
+                    logger.warning(
+                        f"Retry {i+1}/{self.max_retries} for {full_url} failed with error {err}"
+                    )
+
             await config.remove_gateway(domain)
             config.new_gateway()
             timeout = 2**i
