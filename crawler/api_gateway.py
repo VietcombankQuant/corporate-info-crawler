@@ -28,16 +28,16 @@ class ApiGateway:
         return self
 
     def __exit__(self, *args):
-        self.__delete_api_gateway()
+        self.delete_api_gateway()
 
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, *args):
-        self.__delete_api_gateway()
+        self.delete_api_gateway()
 
     def __del__(self):
-        self.__delete_api_gateway()
+        self.delete_api_gateway()
 
     @property
     def endpoint(self) -> str:
@@ -131,7 +131,7 @@ class ApiGateway:
         # Return endpoint name and whether it show it is newly created
         return rest_api_id
 
-    def __delete_api_gateway(self):
+    def delete_api_gateway(self):
         session = boto3.session.Session()
         awsclient = session.client('apigateway', region_name=self.region)
         status = awsclient.delete_rest_api(restApiId=self.rest_api_id)
