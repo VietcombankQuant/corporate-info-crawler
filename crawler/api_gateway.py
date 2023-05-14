@@ -31,9 +31,6 @@ class ApiGateway:
     async def __aexit__(self, *args):
         await self.delete_api_gateway()
 
-    def __del__(self):
-        asyncio.run(self.delete_api_gateway())
-
     @property
     def endpoint(self) -> str:
         return f"{self.rest_api_id}.execute-api.{self.region}.amazonaws.com/{self.stage_name}"

@@ -26,7 +26,7 @@ class RetryClient:
             logger.warning(
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
-            config.remove_gateway(domain)
+            await config.remove_gateway(domain)
             timeout = 2**i
             await asyncio.sleep(timeout)
 
@@ -47,7 +47,7 @@ class RetryClient:
             logger.warning(
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
-            config.remove_gateway(domain)
+            await config.remove_gateway(domain)
             timeout = 2**i
             await asyncio.sleep(timeout)
 

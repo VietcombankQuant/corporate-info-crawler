@@ -58,14 +58,14 @@ class Config:
             "CRAWLER_SQL_ENGINE_URL", f"sqlite:///{db_url}"
         )
 
-    def remove_gateway(self, endpoint):
+    async def remove_gateway(self, endpoint):
         gateway = self.__api_gateways.get(endpoint)
         if gateway != None:
-            asyncio.run(gateway.delete_api_gateway())
+            await gateway.delete_api_gateway()
 
-    def remove_all_gateways(self):
+    async def remove_all_gateways(self):
         for gateway in self.__api_gateways.values():
-            asyncio.run(gateway.delete_api_gateway())
+            await gateway.delete_api_gateway()
 
     def new_gateway(self) -> ApiGateway:
         gateway = ApiGateway(self.source_uri)
