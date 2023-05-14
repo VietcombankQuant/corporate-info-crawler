@@ -127,7 +127,7 @@ class CorporateCrawler:
 
         return corporate
 
-    async def _search_by_region(self, client: aiohttp.ClientSession, region: Region) -> set[str]:
+    async def _search_by_region(self, client: RetryClient, region: Region) -> set[str]:
         search_url = f"https://{config.domain}{region.url}"
         corporate_urls = set()
         current_page = 1
@@ -141,7 +141,7 @@ class CorporateCrawler:
 
         return corporate_urls
 
-    async def _extract_search_result(self, client: aiohttp.ClientSession, search_url: str, params: dict = None) -> SearchResult:
+    async def _extract_search_result(self, client: RetryClient, search_url: str, params: dict = None) -> SearchResult:
         # Fetch content from url
         async with config.limiter as _:
             async with client.get(search_url, params=params) as resp:
