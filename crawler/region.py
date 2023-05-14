@@ -50,13 +50,14 @@ class RegionCrawler:
 
     async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int, parent_region: Region = None):
         # Fetch content from url
-        async with client.get(url) as resp:
-            if not resp.ok:
-                logger.error(
-                    f"Failed to get data from {url} with status {resp.status}"
-                )
-                return
-            content = await resp.text()
+        async with self.limiter as _:
+            async with client.get(url) as resp:
+                if not resp.ok:
+                    logger.error(
+                        f"Failed to get data from {url} with status {resp.status}"
+                    )
+                    return
+                content = await resp.text()
 
         # Extract data from response
         document = etree.HTML(content)
@@ -103,8 +104,7 @@ class RegionCrawler:
 
     async def _crawl_first_level(self, client: aiohttp.ClientSession):
         url = f"https://{config.domain}"
-        async with self.limiter as _:
-            await self._extract_region_info(client, url,  level=1)
+        await self._extract_region_info(client, url,  level=1)
         logger.success(
             f"Got all regions at level 1 - {_region_levels[1]}"
         )
@@ -116,8 +116,7 @@ class RegionCrawler:
 
         async def create_task(region):
             url = f"https://{config.domain}{region.url}"
-            async with self.limiter as _:
-                await self._extract_region_info(client, url, level=level)
+            await self._extract_region_info(client, url, level=level)
             logger.success(f"Got all sub-regions of {region}")
 
         tasks = [create_task(region) for region in regions]
