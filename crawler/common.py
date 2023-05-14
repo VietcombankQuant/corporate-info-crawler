@@ -35,9 +35,12 @@ logger = configure_logger()
 class Config:
     def __init__(self):
         self.domain = os.environ.get("CRAWLER_API_DOMAIN", "masothue.com")
-        self.rate_limit = int(os.environ.get(
-            "CRAWLER_MAX_REQUESTS_PER_SEC", "8")
-        )
+
+        rate_limit = os.environ.get("CRAWLER_MAX_REQUESTS_PER_SEC", "8")
+        self.rate_limit = int(rate_limit)
+
+        max_retries = os.environ("CRAWLER_MAX_RETRIES", "8")
+        self.max_retries = int(max_retries)
 
         __output_path = pathlib.Path.cwd() / "output"
         self.__output_path = os.environ.get(
@@ -45,7 +48,9 @@ class Config:
         )
 
         db_url = __output_path / "corporate-info.sqlite3.db"
-        self.db_url = os.environ.get("CRAWLER_SQL_ENGINE_URL", f"sqlite:///{db_url}")
+        self.db_url = os.environ.get(
+            "CRAWLER_SQL_ENGINE_URL", f"sqlite:///{db_url}"
+        )
 
     @property
     def output_path(self) -> pathlib.Path:
