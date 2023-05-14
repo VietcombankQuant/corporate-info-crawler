@@ -41,11 +41,11 @@ class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
-        self.limiter = RateLimiter(config.rate_limit)
+        self.limiter = RateLimiter(config.rate_limiter)
 
     async def crawl(self):
         async with RetryClient(max_retries=config.max_retries,
-                               limiter=config.rate_limit,
+                               limiter=config.rate_limiter,
                                cookie_jar=aiohttp.DummyCookieJar()) as client:
             await self._crawl_first_level(client)
             await self._crawl_other_level(client, level=2)

@@ -61,7 +61,7 @@ class CorporateCrawler:
 
         cookie_jar = aiohttp.DummyCookieJar()
         async with RetryClient(max_retries=config.max_retries,
-                               limiter=config.rate_limit,
+                               limiter=config.rate_limiter,
                                cookie_jar=cookie_jar) as client:
             for region in regions:
                 urls = await self._search_by_region(client, region)
