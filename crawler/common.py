@@ -39,7 +39,7 @@ class Config:
         rate_limit = os.environ.get("CRAWLER_MAX_REQUESTS_PER_SEC", "8")
         self.rate_limit = int(rate_limit)
 
-        max_retries = os.environ("CRAWLER_MAX_RETRIES", "8")
+        max_retries = os.environ.get("CRAWLER_MAX_RETRIES", "8")
         self.max_retries = int(max_retries)
 
         __output_path = pathlib.Path.cwd() / "output"
