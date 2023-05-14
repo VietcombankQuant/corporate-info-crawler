@@ -56,7 +56,7 @@ class Config:
         self.db_url = os.environ.get(
             "CRAWLER_SQL_ENGINE_URL", f"sqlite:///{db_url}"
         )
-    
+
     def remove_gateway(self, endpoint):
         if endpoint in self.__api_gateways:
             del self.__api_gateways[endpoint]
@@ -70,6 +70,8 @@ class Config:
         if len(self.__api_gateways) == 0:
             gateway = ApiGateway(self.source_uri, region="ap-southeast-1")
             self.__api_gateways[gateway.endpoint] = gateway
+            return gateway.endpoint
+
         gateway = random.choice(list(self.__api_gateways.values()))
         return gateway.endpoint
 
