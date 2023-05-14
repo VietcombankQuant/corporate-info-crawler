@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session as SqlSession
 from sqlalchemy import Column as SqlColumn, String as SqlString, Integer as SqlInteger
 
 from .common import *
-from .ratelimit import RateLimiter
 
 
 _region_levels = {1: "Tỉnh, thành phố", 2: "Quận, huyện", 3: "Phường, xã"}
@@ -40,7 +39,6 @@ class RegionCrawler:
     def __init__(self,  storage_engine: SqlEngine):
         self.storage_engine = storage_engine
         Region.create_table(self.storage_engine)
-        self.limiter = RateLimiter(config.rate_limit)
 
     async def crawl(self):
         async with aiohttp.ClientSession(cookie_jar=aiohttp.DummyCookieJar()) as client:
@@ -50,7 +48,7 @@ class RegionCrawler:
 
     async def _extract_region_info(self, client: aiohttp.ClientSession, url: str, level: int, parent_region: Region = None):
         # Fetch content from url
-        async with self.limiter as _:
+        async with config.limiter as _:
             async with client.get(url) as resp:
                 if not resp.ok:
                     logger.error(

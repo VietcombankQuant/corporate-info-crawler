@@ -5,6 +5,8 @@ import sys
 import json
 import os
 
+from .ratelimit import RateLimiter
+
 __all__ = ["SqlTableBase", "logger", "config"]
 
 SqlTableBase = declarative_base()
@@ -35,9 +37,10 @@ logger = configure_logger()
 class Config:
     def __init__(self):
         self.domain = os.environ.get("CRAWLER_API_DOMAIN", "masothue.com")
-        self.rate_limit = int(os.environ.get(
+        rate_limit = int(os.environ.get(
             "CRAWLER_MAX_REQUESTS_PER_SEC", "8")
         )
+        self.rate_limit = RateLimiter(rate_limit)
 
         __output_path = pathlib.Path.cwd() / "output"
         self.__output_path = os.environ.get(
