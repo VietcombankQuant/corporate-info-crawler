@@ -100,8 +100,7 @@ class CorporateCrawler:
 
     async def _extract_corporate_info(self, client: RetryClient, url: str, region: Region) -> Union[Corporate, None]:
         # Fetch corporate data from url
-        full_url = f"https://{config.domain}{url}"
-        async with client.get(full_url) as resp:
+        async with client.get(url) as resp:
             if not resp.ok:
                 logger.error(
                     f"Failed to get corporate data from {url} with status {resp.status}"
@@ -127,7 +126,7 @@ class CorporateCrawler:
         return corporate
 
     async def _search_by_region(self, client: RetryClient, region: Region) -> set[str]:
-        search_url = f"https://{config.domain}{region.url}"
+        search_url = region.url
         corporate_urls = set()
         current_page = 1
         max_page = 1

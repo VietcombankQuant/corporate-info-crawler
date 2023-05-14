@@ -105,7 +105,7 @@ class RegionCrawler:
         )
 
     async def _crawl_first_level(self, client: RetryClient):
-        url = f"https://{config.domain}"
+        url = "/"
         await self._extract_region_info(client, url,  level=1)
         logger.success(
             f"Got all regions at level 1 - {_region_levels[1]}"
@@ -116,9 +116,8 @@ class RegionCrawler:
             regions_iter = session.query(Region).where(Region.level == level-1)
             regions = list(regions_iter)
 
-        async def create_task(region):
-            url = f"https://{config.domain}{region.url}"
-            await self._extract_region_info(client, url, level=level)
+        async def create_task(region: Region):
+            await self._extract_region_info(client, region.url, level=level)
             logger.success(f"Got all sub-regions of {region}")
 
         tasks = [create_task(region) for region in regions]

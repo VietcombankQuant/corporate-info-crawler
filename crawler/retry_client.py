@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 from contextlib import asynccontextmanager
 
-from .common import logger
+from .common import logger, config
 from .ratelimit import RateLimiter
 
 
@@ -16,13 +16,14 @@ class RetryClient:
     @asynccontextmanager
     async def get(self, url, *args, **kwargs) -> aiohttp.ClientResponse:
         for i in range(self.max_retries):
+            full_url = f"https://{config.domain}{url}"
             async with self.limiter as _:
-                async with self.session.get(url, *args, **kwargs) as resp:
+                async with self.session.get(full_url, *args, **kwargs) as resp:
                     if resp.ok or (i == self.max_retries - 1):
                         yield resp
                         return
                 logger.warning(
-                    f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
+                    f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
                 )
                 timeout = 2**i
                 await asyncio.sleep(timeout)
@@ -30,13 +31,14 @@ class RetryClient:
     @asynccontextmanager
     async def post(self, url, *args, **kwargs) -> aiohttp.ClientResponse:
         for i in range(self.max_retries):
+            full_url = f"https://{config.domain}{url}"
             async with self.limiter as _:
-                async with self.session.post(url, *args, **kwargs) as resp:
+                async with self.session.post(full_url, *args, **kwargs) as resp:
                     if resp.ok or (i == self.max_retries-1):
                         yield resp
                         return
                 logger.warning(
-                    f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
+                    f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
                 )
                 timeout = 2**i
                 await asyncio.sleep(timeout)
