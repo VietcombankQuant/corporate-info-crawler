@@ -5,6 +5,8 @@ import sys
 import json
 import os
 
+from .ratelimit import RateLimiter
+
 __all__ = ["SqlTableBase", "logger", "config"]
 
 SqlTableBase = declarative_base()
@@ -37,7 +39,8 @@ class Config:
         self.domain = os.environ.get("CRAWLER_API_DOMAIN", "masothue.com")
 
         rate_limit = os.environ.get("CRAWLER_MAX_REQUESTS_PER_SEC", "8")
-        self.rate_limit = int(rate_limit)
+        rate_limit = int(rate_limit)
+        self.rate_limiter = RateLimiter(rate_limit)
 
         max_retries = os.environ.get("CRAWLER_MAX_RETRIES", "8")
         self.max_retries = int(max_retries)
