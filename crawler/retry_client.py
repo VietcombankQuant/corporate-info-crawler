@@ -21,11 +21,11 @@ class RetryClient:
                     if resp.ok or (i == self.max_retries - 1):
                         yield resp
                         return
-            logger.warning(
-                f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
-            )
-            timeout = 2**i
-            await asyncio.sleep(timeout)
+                logger.warning(
+                    f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
+                )
+                timeout = 2**i
+                await asyncio.sleep(timeout)
 
     @asynccontextmanager
     async def post(self, url, *args, **kwargs) -> aiohttp.ClientResponse:
@@ -35,11 +35,11 @@ class RetryClient:
                     if resp.ok or (i == self.max_retries-1):
                         yield resp
                         return
-            logger.warning(
-                f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
-            )
-            timeout = 2**i
-            await asyncio.sleep(timeout)
+                logger.warning(
+                    f"Retry {i+1}/{self.max_retries} for {url} failed with status {resp.status}"
+                )
+                timeout = 2**i
+                await asyncio.sleep(timeout)
 
     async def __aenter__(self):
         session = aiohttp.ClientSession(*self.args, **self.kwargs)
