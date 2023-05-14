@@ -27,7 +27,7 @@ class RetryClient:
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
             await config.remove_gateway(domain)
-            await config.new_gateway()
+            config.new_gateway()
             timeout = 2**i
             await asyncio.sleep(timeout)
 
@@ -49,6 +49,7 @@ class RetryClient:
                 f"Retry {i+1}/{self.max_retries} for {full_url} failed with status {resp.status}"
             )
             await config.remove_gateway(domain)
+            config.new_gateway()
             timeout = 2**i
             await asyncio.sleep(timeout)
 
